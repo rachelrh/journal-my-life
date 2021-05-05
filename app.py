@@ -26,12 +26,16 @@ def failure_response(message, code=404):
 
 
 # your routes here
+@app.route("/api/posts/")
+def get_all_posts():
+    return success_response([p.serialize() for p in Post.query.all()])
+
 @app.route("/api/posts/<int:post_date>/")
 def get_post_by_date(post_date):
-    post = Post.query.filter_by(date=post_date).first()
-    if post is None:
-        return failure_response('Post not found')
-    return success_response(post.serialize())
+    posts = Post.query.filter_by(date=post_date).all()
+    if posts is None:
+        return failure_response('Posts not found!')
+    return success_response([p.serialize() for p in posts])
 
 
 @app.route("/api/posts/", methods=["POST"])
