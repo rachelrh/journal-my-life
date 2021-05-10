@@ -1,7 +1,7 @@
 import json
 import os
 from db import db
-from db import Post
+from db import Post, User
 from flask import Flask
 from flask import request
 
@@ -26,20 +26,49 @@ def failure_response(message, code=404):
 
 
 # your routes here
-@app.route("/api/posts/")
-def get_all_posts():
-    return success_response([p.serialize() for p in Post.query.all()])
 
-@app.route("/api/posts/<int:post_date>/")
-def get_post_by_date(post_date):
-    posts = Post.query.filter_by(date=post_date).all()
+@app.route("/api/users/<int:user_id>/")
+def get_user_by_id(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
+    return success_response(user.serialize())
+
+@app.route("/api/users/", methods=["POST"])
+def create_user():
+    body = json.loads(request.data)
+    name = body.get('name')
+    if name is None:
+        return failure_response("No name provided")
+    new_user = User(name=name)
+
+    db.session.add(new_user)
+    db.session.commit()
+    return success_response(new_user.serialize())
+
+@app.route("/api/users/<int:user_id>/posts/")
+def get_all_posts(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
+    return success_response([p.serialize() for p in user.posts])
+
+@app.route("/api/users/<int:user_id>/posts/<int:post_date>/")
+def get_post_by_date(user_id, post_date):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
+    posts = user.posts.filter_by(date=post_date).all()
     if posts is None:
         return failure_response('Posts not found!')
     return success_response([p.serialize() for p in posts])
 
+@app.route("/api/users/<int:user_id>/posts/", methods=["POST"])
+def create_post(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
 
-@app.route("/api/posts/", methods=["POST"])
-def create_post():
     body = json.loads(request.data)
     date = body.get('date')
     location = body.get('location')
@@ -51,17 +80,23 @@ def create_post():
         return failure_response("No location provided")
     if entry is None:
         return failure_response("No entry provided")
-    new_post = Post(date=date, location=location, pictures=pictures, entry=entry)
+    new_post = Post(date=date, location=location, pictures=pictures, entry=entry, user_id=user_id)
+
     db.session.add(new_post)
     db.session.commit()
     return success_response(new_post.serialize())
 
 
-@app.route("/api/posts/<int:post_id>/", methods=["DELETE"])
-def delete_post(post_id):
-    post = Post.query.filter_by(id=post_id).first()
+@app.route("/api/users/<int:user_id>/posts/<int:post_id>/", methods=["DELETE"])
+def delete_post(user_id, post_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
+
+    post = user.posts.filter_by(id=post_id).first()
     if post is None:
         return failure_response('Post not found!')
+
     db.session.delete(post)
     db.session.commit()
     return success_response(post.serialize())
@@ -69,3 +104,8 @@ def delete_post(post_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+
+@app.route("/api/users/<int:user_id>/posts/<int:post_id>/", methods=["POST"])
+def update_post(user_id, post_id):
+    pass
