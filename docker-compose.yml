@@ -1,0 +1,6 @@
+version: '3'
+services: 
+    demo:
+        image: rachelrho/journalmylife:submission
+        ports:
+            - "5000:5000"
