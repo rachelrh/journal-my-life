@@ -10,7 +10,7 @@ Requirements:
   - There are at least 4 endpoints (provided in API specification)
   - Used SQLAlchemy
   - Have 3 tables with one-to-many relationships (Asset, User, Post)
-  - Heroku Link:
+  - Heroku Link: journalmylifeapp.herokuapp.com
   
  Additional Notes:
  - Do not have screenshots of app design because have not been in contact with design members and frontend members since midpoint.
