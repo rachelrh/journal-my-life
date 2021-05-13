@@ -13,5 +13,5 @@ Requirements:
   - Heroku Link:
   
  Additional Notes:
- - Do not have screenshots of app design because have not been in contact with design members and frontend members.
+ - Do not have screenshots of app design because have not been in contact with design members and frontend members since midpoint.
   
