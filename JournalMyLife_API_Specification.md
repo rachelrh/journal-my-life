@@ -1,15 +1,16 @@
 # API Specification:
 
 ### [POST] /api/register/
+- Register an account
 Request 
-```json
+```
 {
 	"username": <USER INPUT>,
 	"password": <USER INPUT>
 }
 ```
 Response
-```json
+```
 {
 	"session_token": <GENERATED SESSION TOKEN>,
 	"session_expiration": <GENERATED SESSION EXPIRATION TIME>,
@@ -18,15 +19,16 @@ Response
 ```
 
 ### [POST] /api/login/
+- Login to account
 Request 
-```json
+```
 {
 	"username": <USER INPUT>,
 	"password": <USER INPUT>
 }
 ```
 Response
-```json
+```
 {
 	"session_token": <GENERATED SESSION TOKEN>,
 	"session_expiration": <GENERATED SESSION EXPIRATION TIME>,
@@ -35,8 +37,9 @@ Response
 ```
 
 ### [POST] /session/
+- Updates session
 Response
-```json
+```
 {
 	"session_token": <GENERATED SESSION TOKEN>,
 	"session_expiration": <GENERATED SESSION EXPIRATION TIME>,
@@ -44,9 +47,10 @@ Response
 }
 ```
 
-[GET] /api/login/posts/
+### [GET] /api/login/posts/
+- Returns all posts
 Response
-```json
+```
 {
 	"success": true,
 	"data": [
@@ -66,8 +70,9 @@ Response
 ```
 
 ### [GET] /api/login/posts/{year}/{month}/{day}/
+- Returns posts on a specificed date
 Response
-```json
+```
 {
 	"success": true,
 	"data": <POST WITH DATE {year}/{month}/{day}>
@@ -75,8 +80,9 @@ Response
 ```
 
 ### [POST] /api/login/posts/
+- Creates a post
 Request
-```json
+```
 {
 	"year": <USER INPUT>,
 	"month": <USER INPUT>,
@@ -86,8 +92,8 @@ Request
 
 }
 ```
-Reponse
-```json
+Response
+```
 {
 	"success": true,
 	"data": {
@@ -105,8 +111,9 @@ Reponse
 ```
 		
 ### [DELETE] /api/login/posts/{post_id}/
-Reponse
-```json
+- Deletes a post with specified ID
+Response
+```
 {
 	"success": true,
 	"data": <DELETED POST>
@@ -114,8 +121,9 @@ Reponse
 ```
 
 ### [POST] /api/login/posts/{post_id}/
+- Updates a post with a specified ID
 Request
-```json
+```
 {
 	"entry": <USER INPUT>,
 	"location": <USER INPUT>
@@ -123,7 +131,7 @@ Request
 ```
 
 Response
-```json
+```
 {
 	"success": true,
 	"data": {
@@ -140,14 +148,15 @@ Response
 ```
 
 ### [POST] /api/login/posts/{post_id}/upload/
+- Uploads a picture to a post with a specified ID
 Request
-```json
+```
 {
 	"image_data": <USER INPUT IN BASE64>
 }
 ```
-Reponse
-```json
+Response
+```
 {
 	"success": true,
 	"data": {
