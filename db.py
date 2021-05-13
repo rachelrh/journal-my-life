@@ -18,7 +18,7 @@ db = SQLAlchemy()
 EXTENSIONS = ['png', 'gif', 'jpg', 'jpeg']
 
 BASE_DIR = os.getcwd()
-S3_BUCKET = 'journalmylife'
+S3_BUCKET = 'journal-my-life'
 S3_BASE_URL = f'https://{S3_BUCKET}.s3-us-east-2.amazonaws.com'
 
 class Asset(db.Model):
@@ -37,7 +37,6 @@ class Asset(db.Model):
         self.post_id = kwargs.get('post_id')
 
     # different serialize methods (w and w/o post_id)
-    # i
     def serialize(self):
         return {
             "id": self.id,
@@ -53,20 +52,16 @@ class Asset(db.Model):
             ext = guess_extension(guess_type(image_data)[0])[1:]
             if ext not in EXTENSIONS:
                 raise Exception(f"Extention {ext} not supported")
-            
             salt = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for i in range(16))
-
             img_str = re.sub("^data:image/.+;base64,", "", image_data)
             img_data = base64.b64decode(img_str)
             img = Image.open(BytesIO(img_data))
-
             self.base_url = S3_BASE_URL
             self.salt = salt
             self.extension = ext
             self.height = img.height
             self.width = img.width
             self.created_at = datetime.datetime.now()
-
             img_filename = f"{salt}.{ext}"
             self.upload(img, img_filename)
 
@@ -91,21 +86,16 @@ class Asset(db.Model):
 
 class User(db.Model):
     __tablename__ = "user"
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String, nullable=False, unique=True)
-    """
     password_digest = db.Column(db.String, nullable=False)
     session_token = db.Column(db.String, nullable=False, unique=True)
     session_expiration = db.Column(db.DateTime, nullable=False)
     update_token = db.Column(db.String, nullable=False, unique=True)
-    """
-    name = db.Column(db.String, nullable=False)
     posts = db.relationship("Post")
 
     def __init__(self, **kwargs):
-        self.name = kwargs.get("name")
         self.username = kwargs.get("username")
-        """
         self.password_digest = bcrypt.hashpw(kwargs.get("password").encode("utf8"), bcrypt.gensalt(rounds=13))
         self.renew_session()
     def _urlsafe_base_64(self):
@@ -118,28 +108,24 @@ class User(db.Model):
         return bcrypt.checkpw(password.encode("utf8"), self.password_digest)
     def verify_session_token(self, session_token):
         return session_token == self.session_token and datetime.datetime.now() < self.session_expiration
-
     def verify_update_token(self, update_token):
        return update_token == self.update_token
-"""
     def serialize(self):
         return {
             "id": self.id,
-            "name": self.name,
             "username": self.username,
             "posts": [p.serialize() for p in self.posts]
         }
 
 class Post(db.Model):
     __tablename__ = "post"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     year = db.Column(db.Integer, nullable=False)
     month = db.Column(db.Integer, nullable=False)
     day = db.Column(db.Integer, nullable=False)
     location = db.Column(db.String, nullable = False)
-    pictures = db.Column(db.String, nullable=True)
     entry = db.Column(db.String, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     images = db.relationship("Asset")
 
     def __init__(self, **kwargs):
@@ -159,7 +145,6 @@ class Post(db.Model):
             "month": self.month,
             "day": self.day,
             "location": self.location,
-            "pictures": self.pictures,
             "entry": self.entry,
             "user_id": self.user_id,
             "images": [i.serialize() for i in self.images]
