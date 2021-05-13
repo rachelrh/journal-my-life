@@ -18,7 +18,7 @@ db = SQLAlchemy()
 EXTENSIONS = ['png', 'gif', 'jpg', 'jpeg']
 
 BASE_DIR = os.getcwd()
-S3_BUCKET = 'journalmylife'
+S3_BUCKET = 'journalmylifebucket'
 S3_BASE_URL = f'https://{S3_BUCKET}.s3-us-east-2.amazonaws.com'
 
 class Asset(db.Model):
