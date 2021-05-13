@@ -1,7 +1,7 @@
 import json
 import os
 from db import db
-from db import Post, User
+from db import Post, User, Asset
 from flask import Flask
 from flask import request
 
@@ -38,9 +38,12 @@ def get_user_by_id(user_id):
 def create_user():
     body = json.loads(request.data)
     name = body.get('name')
+    username = body.get('username')
+    if username is None:
+        return failure_response("No username provided")
     if name is None:
         return failure_response("No name provided")
-    new_user = User(name=name)
+    new_user = User(name=name, username=username)
 
     db.session.add(new_user)
     db.session.commit()
@@ -53,14 +56,19 @@ def get_all_posts(user_id):
         return failure_response("User not found")
     return success_response([p.serialize() for p in user.posts])
 
-@app.route("/api/users/<int:user_id>/posts/<int:post_date>/")
-def get_post_by_date(user_id, post_date):
+@app.route("/api/users/<int:user_id>/posts/<int:year>/<int:month>/<int:day>/")
+def get_post_by_date(user_id, year, month, day):
+
+    #iso8601
+    #datetime.isoformat 
+    #year, month, day
     user = User.query.filter_by(id=user_id).first()
     if user is None:
         return failure_response("User not found")
-    posts = user.posts.filter_by(date=post_date).all()
-    if posts is None:
-        return failure_response('Posts not found!')
+    
+    #existing = User.query.join(User.spaces).filter(User.username=='Bob', Space.name=='Mainspace').first()
+    posts = User.query.join(User.posts).filter(Post.year==year, Post.month==month, Post.day==day).all()
+    posts = User.query.filter_by(year=year).filter_by(month=month).filter_by(day=day).all()
     return success_response([p.serialize() for p in posts])
 
 @app.route("/api/users/<int:user_id>/posts/", methods=["POST"])
@@ -70,17 +78,19 @@ def create_post(user_id):
         return failure_response("User not found")
 
     body = json.loads(request.data)
-    date = body.get('date')
+    year = json.loads('year')
+    month = json.loads('month')
+    day = json.loads('day')
     location = body.get('location')
     pictures = body.get('pictures')
     entry = body.get('entry')
-    if date is None:
-        return failure_response("No date provided")
+    if year is None or month is None or day is None:
+        return failure_response("Invalid date provided")
     if location is None:
         return failure_response("No location provided")
     if entry is None:
         return failure_response("No entry provided")
-    new_post = Post(date=date, location=location, pictures=pictures, entry=entry, user_id=user_id)
+    new_post = Post(year=year, month=month, day=day, location=location, pictures=pictures, entry=entry, user_id=user_id)
 
     db.session.add(new_post)
     db.session.commit()
@@ -93,19 +103,48 @@ def delete_post(user_id, post_id):
     if user is None:
         return failure_response("User not found")
 
-    post = user.posts.filter_by(id=post_id).first()
-    if post is None:
+    posts = user.posts
+    p = None
+    if posts == []:
         return failure_response('Post not found!')
-
-    db.session.delete(post)
+    for post in posts:
+        if post.id == post_id:
+            p = post
+            db.session.delete(p)
+    if p is None:
+        return failure_response('Post not found!')
     db.session.commit()
-    return success_response(post.serialize())
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    return success_response(p.serialize())
 
 
 @app.route("/api/users/<int:user_id>/posts/<int:post_id>/", methods=["POST"])
 def update_post(user_id, post_id):
     pass
+
+@app.route("/api/users/<int:user_id>/posts/<int:post_id>/upload/", methods=['POST'])
+def upload(user_id, post_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
+
+    # post w post_id is in user.posts
+    posts = user.posts
+    if posts == []:
+        return failure_response('Post not found!')
+
+    body = json.loads(request.data)
+    image_data = body.get('image_data')
+    if image_data is None:
+        return failure_response('No image provided')
+    asset = Asset(image_data=image_data, post_id=post_id)
+    db.session.add(asset)
+    db.session.commit()
+    return success_response(asset.serialize(), 201)
+
+#@app.route("")
+# img link or img id in json req body
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=5000, debug=True)
