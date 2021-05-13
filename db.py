@@ -18,7 +18,7 @@ db = SQLAlchemy()
 EXTENSIONS = ['png', 'gif', 'jpg', 'jpeg']
 
 BASE_DIR = os.getcwd()
-S3_BUCKET = 'journal-my-life'
+S3_BUCKET = 'journalmylife'
 S3_BASE_URL = f'https://{S3_BUCKET}.s3-us-east-2.amazonaws.com'
 
 class Asset(db.Model):
@@ -36,16 +36,12 @@ class Asset(db.Model):
         self.create(kwargs.get('image_data'))
         self.post_id = kwargs.get('post_id')
 
-    # different serialize methods (w and w/o post_id)
     def serialize(self):
         return {
             "id": self.id,
             "url": f"{self.base_url}/{self.salt}.{self.extension}",
             "created_at": str(self.created_at)
         }
-
-    def serialize_with_post(self):
-        pass
 
     def create(self, image_data):
         try:
@@ -92,7 +88,7 @@ class User(db.Model):
     session_token = db.Column(db.String, nullable=False, unique=True)
     session_expiration = db.Column(db.DateTime, nullable=False)
     update_token = db.Column(db.String, nullable=False, unique=True)
-    posts = db.relationship("Post")
+    posts = db.relationship("Post", cascade="delete")
 
     def __init__(self, **kwargs):
         self.username = kwargs.get("username")
@@ -126,14 +122,13 @@ class Post(db.Model):
     location = db.Column(db.String, nullable = False)
     entry = db.Column(db.String, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    images = db.relationship("Asset")
+    images = db.relationship("Asset", cascade="delete")
 
     def __init__(self, **kwargs):
         self.year = kwargs.get('year')
         self.month = kwargs.get('month')
         self.day = kwargs.get('day')
         self.location = kwargs.get("location")
-        self.images = kwargs.get("images")
         self.entry = kwargs.get("entry")
         self.user_id = kwargs.get("user_id")
     

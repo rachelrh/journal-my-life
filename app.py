@@ -132,11 +132,9 @@ def get_post_by_date(year, month, day):
     sameDate = []
     for post in posts:
         if post.year == year and post.month == month and post.day == day:
-            sameDate.add(post)
+            sameDate.append(post)
     if sameDate == []:
         return failure_response("No posts of this date")
-    # posts = User.query.join(User.posts).filter(Post.year==year, Post.month==month, Post.day==day).all()
-    # posts = User.query.filter_by(year=year).filter_by(month=month).filter_by(day=day).all()
     return success_response([p.serialize() for p in sameDate])
 
 
@@ -153,7 +151,6 @@ def create_post():
     month = body.get('month')
     day = body.get('day')
     location = body.get('location')
-    images = body.get('images', [])
     entry = body.get('entry')
     if year is None or month is None or day is None:
         return failure_response("Invalid date provided")
@@ -161,7 +158,7 @@ def create_post():
         return failure_response("No location provided")
     if entry is None:
         return failure_response("No entry provided")
-    new_post = Post(year=year, month=month, day=day, location=location, images=images, entry=entry, user_id=user.id)
+    new_post = Post(year=year, month=month, day=day, location=location, entry=entry, user_id=user.id)
 
     db.session.add(new_post)
     db.session.commit()
@@ -189,6 +186,25 @@ def delete_post(post_id):
     db.session.commit()
     return success_response(p.serialize())
 
+@app.route("/api/login/posts/<int:post_id>/", methods=["POST"])
+def update_post(post_id):
+    success, session_token = extract_token(request)
+    if not success: 
+        return session_token
+    user = get_user_by_session_token(session_token)
+    if not user or not user.verify_session_token(session_token):
+        return json.dumps({"error": "Invalid session token"})
+    post = Post.query.filter_by(id=post_id).first()
+    if post is None:
+        return failure_response("Post not found!")
+
+    body = json.loads(request.data)
+    post.location = body.get('location', post.location)
+    post.entry = body.get('entry', post.entry)
+    
+    db.session.commit()
+    return success_response(post.serialize())
+
 
 @app.route("/api/login/posts/<int:post_id>/upload/", methods=['POST'])
 def upload(post_id):
@@ -198,16 +214,17 @@ def upload(post_id):
     user = get_user_by_session_token(session_token)
     if not user or not user.verify_session_token(session_token):
         return json.dumps({"error": "Invalid session token"})
-    # post w post_id is in user.posts
+        
     posts = user.posts
     if posts == []:
         return failure_response('Post not found!')
+
     body = json.loads(request.data)
     image_data = body.get('image_data')
     if image_data is None:
         return failure_response('No image provided')
     asset = Asset(image_data=image_data, post_id=post_id)
-    #db.session.add(asset)
+    db.session.add(asset)
     db.session.commit()
     return success_response(asset.serialize(), 201)
 
@@ -216,7 +233,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=5000, debug=True)
 
-
-@app.route("/api/login/posts/<int:post_id>/", methods=["POST"])
-def update_post(post_id):
-    pass
